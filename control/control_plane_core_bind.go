@@ -106,16 +106,21 @@ func (c *controlPlaneCore) delQdisc(link netlink.Link) error {
 }
 
 func makeTCHookSpec(scope tcHookScope, link netlink.Link, direction tcHookDirection, priority uint16, major uint16, program *ebpf.Program, name string, run func(func() error) error) tcHookSpec {
+	return makeTCHookSpecForced(scope, link, direction, priority, major, program, name, run, false)
+}
+
+func makeTCHookSpecForced(scope tcHookScope, link netlink.Link, direction tcHookDirection, priority uint16, major uint16, program *ebpf.Program, name string, run func(func() error) error, forceClassic bool) tcHookSpec {
 	return tcHookSpec{
-		Scope:     scope,
-		Ifindex:   link.Attrs().Index,
-		Ifname:    link.Attrs().Name,
-		Direction: direction,
-		Priority:  priority,
-		Handle:    netlink.MakeHandle(major, priority*2),
-		Name:      name,
-		Program:   program,
-		Run:       run,
+		Scope:        scope,
+		Ifindex:      link.Attrs().Index,
+		Ifname:       link.Attrs().Name,
+		Direction:    direction,
+		Priority:     priority,
+		Handle:       netlink.MakeHandle(major, priority*2),
+		Name:         name,
+		Program:      program,
+		Run:          run,
+		ForceClassic: forceClassic,
 	}
 }
 
@@ -271,10 +276,10 @@ func (c *controlPlaneCore) _bindLan(ifname string) error {
 		egressProgram = bpf.TproxyLanEgressL2
 		egressName = consts.AppName + "_lan_egress_l2"
 	}
-	if err := c.stageTCHook(makeTCHookSpec(tcHookScopeHost, link, tcHookIngress, ingressPriority, 0x2023, ingressProgram, ingressName, nil)); err != nil {
+	if err := c.stageTCHook(makeTCHookSpecForced(tcHookScopeHost, link, tcHookIngress, ingressPriority, 0x2023, ingressProgram, ingressName, nil, c.forceClassicTC)); err != nil {
 		return fmt.Errorf("install LAN ingress hook: %w", err)
 	}
-	if err := c.stageTCHook(makeTCHookSpec(tcHookScopeHost, link, tcHookEgress, 1, 0x2023, egressProgram, egressName, nil)); err != nil {
+	if err := c.stageTCHook(makeTCHookSpecForced(tcHookScopeHost, link, tcHookEgress, 1, 0x2023, egressProgram, egressName, nil, c.forceClassicTC)); err != nil {
 		return fmt.Errorf("install LAN egress hook: %w", err)
 	}
 
@@ -590,10 +595,10 @@ func (c *controlPlaneCore) _bindWan(ifname string) error {
 		ingressProgram = bpf.TproxyWanIngressL2
 		ingressName = consts.AppName + "_wan_ingress_l2"
 	}
-	if err := c.stageTCHook(makeTCHookSpec(tcHookScopeHost, link, tcHookEgress, egressPriority, 0x2023, egressProgram, egressName, nil)); err != nil {
+	if err := c.stageTCHook(makeTCHookSpecForced(tcHookScopeHost, link, tcHookEgress, egressPriority, 0x2023, egressProgram, egressName, nil, c.forceClassicTC)); err != nil {
 		return fmt.Errorf("install WAN egress hook: %w", err)
 	}
-	if err := c.stageTCHook(makeTCHookSpec(tcHookScopeHost, link, tcHookIngress, 1, 0x2023, ingressProgram, ingressName, nil)); err != nil {
+	if err := c.stageTCHook(makeTCHookSpecForced(tcHookScopeHost, link, tcHookIngress, 1, 0x2023, ingressProgram, ingressName, nil, c.forceClassicTC)); err != nil {
 		return fmt.Errorf("install WAN ingress hook: %w", err)
 	}
 

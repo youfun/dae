@@ -225,6 +225,13 @@ struct dae_param {
 	// When bpf_sk_lookup_* finds a socket, we check this mark to skip dae's own sockets.
 	// This prevents false positives in NAT loopback detection for transparent proxying.
 	__u32 dae_socket_mark;
+	/* landscape_gateway_mac is opt-in and zero by default. When set, a reply
+	 * whose destination is not already that MAC is rewritten to it immediately
+	 * before bpf_redirect. A later classic filter cannot do this: the redirect
+	 * returns TC_ACT_OK and the frame has already left dae0. Zero preserves
+	 * the historical reply destination, which is the original frame source. */
+	__u8 landscape_gateway_mac[6];
+	__u8 padding_after_gateway[2];
 };
 
 /* Use const volatile for cilium/ebpf v0.20.0 compatibility.
@@ -4060,6 +4067,24 @@ int tproxy_dae0_ingress(struct __sk_buff *skb)
 	bpf_skb_store_bytes(skb, offsetof(struct ethhdr, h_dest),
 			    redirect_entry->smac, sizeof(redirect_entry->smac),
 			    0);
+	/* Opt-in only. The stored binding stays the original source so publisher
+	 * matching is unchanged. The on-wire destination is the container gateway
+	 * when that MAC was injected, unless the rewrite already chose it. */
+	if (PARAM.landscape_gateway_mac[0] | PARAM.landscape_gateway_mac[1] |
+	    PARAM.landscape_gateway_mac[2] | PARAM.landscape_gateway_mac[3] |
+	    PARAM.landscape_gateway_mac[4] | PARAM.landscape_gateway_mac[5]) {
+		struct ethhdr rewritten;
+		__u8 gateway[6];
+
+		/* Copy out of the volatile rodata slot before comparing. A direct
+		 * pointer to that slot discards volatile and fails -Werror. */
+		for (int i = 0; i < 6; i++)
+			gateway[i] = PARAM.landscape_gateway_mac[i];
+		if (!bpf_skb_load_bytes(skb, 0, &rewritten, sizeof(rewritten)) &&
+		    !mac6_equal(rewritten.h_dest, gateway))
+			bpf_skb_store_bytes(skb, offsetof(struct ethhdr, h_dest),
+					    gateway, 6, 0);
+	}
 	__u32 type = redirect_entry->from_wan ? PACKET_HOST : PACKET_OTHERHOST;
 
 	bpf_skb_change_type(skb, type);

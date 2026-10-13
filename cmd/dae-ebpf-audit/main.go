@@ -21,16 +21,18 @@ import (
 )
 
 type daeParam struct {
-	TproxyPort      uint32
-	ControlPlanePid uint32
-	Dae0Ifindex     uint32
-	DaeNetnsId      uint32
-	Dae0peerMac     [6]uint8
-	PaddingAfterMac [2]uint8
-	UseRedirectPeer uint8
-	Padding1        uint8
-	Padding2        uint16
-	DaeSocketMark   uint32
+	TproxyPort             uint32
+	ControlPlanePid        uint32
+	Dae0Ifindex            uint32
+	DaeNetnsId             uint32
+	Dae0peerMac            [6]uint8
+	PaddingAfterMac        [2]uint8
+	UseRedirectPeer        uint8
+	Padding1               uint8
+	Padding2               uint16
+	DaeSocketMark          uint32
+	LandscapeGatewayMac    [6]uint8
+	PaddingAfterGatewayMac [2]uint8
 }
 
 func main() {

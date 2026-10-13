@@ -1,0 +1,60 @@
+# Minimal Landscape edge config. Replace NODE_URI with a node link.
+# Do not commit a real secret. This file does not name a Landscape flow id.
+# The Landscape DNS rule is not configured here. Put that rule on client DNS
+# flow 0, and set mark.flow_id to the new dae packet flow. Use a real-IP
+# upstream for api.ipify.org. Do not use Mihomo Fake-IP.
+global {
+    tproxy_port: 12345
+    log_level: info
+    dial_mode: domain
+    # Classic TC so dae shares priority ordering with the pref-1 adapter.
+    # Default remains false outside this PoC.
+    tc_classic: true
+    # Leave empty in this sample. The entrypoint learns the container
+    # default-route neighbor and publishes it before dae loads. An explicit
+    # value here wins and must be that neighbor, not a host WAN or bridge MAC.
+    allow_insecure: false
+    auto_config_kernel_parameter: true
+    # Container eth0 LAN ingress only. Do not also set wan_interface:
+    # a dual-role interface moves dae ingress to priority 1 and collides
+    # with the adapter. Do not list a host LAN or WAN interface.
+    lan_interface: eth0
+
+    tcp_check_url: 'http://cp.cloudflare.com,1.1.1.1'
+    udp_check_dns: 'dns.google:53,8.8.8.8'
+    check_interval: 30s
+    check_tolerance: 50ms
+}
+
+node {
+    edge: 'NODE_URI'
+}
+
+dns {
+    upstream {
+        googledns: 'tcp+udp://dns.google:53'
+    }
+    routing {
+        request {
+            qname(geosite:category-ads-all) -> reject
+            qname(geosite:cn) -> asis
+            fallback: googledns
+        }
+        response {
+            upstream(googledns) -> accept
+            fallback: accept
+        }
+    }
+}
+
+group {
+    edge {
+        filter: name(edge)
+        policy: min_moving_avg
+    }
+}
+
+routing {
+    dip(geoip:private) -> direct
+    fallback: edge
+}

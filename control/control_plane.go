@@ -303,6 +303,20 @@ func isIPLikeDomain(domain string) bool {
 // NewControlPlaneWithContextOptions is the single control-plane constructor;
 // the previous New{,Reload,Prepared,PreparedReload}ControlPlaneWithContext
 // wrapper family collapsed into this options-based entry point.
+func parseReplyGatewayMAC(raw string) ([6]byte, error) {
+	if raw == "" {
+		return [6]byte{}, nil
+	}
+	mac, err := net.ParseMAC(raw)
+	if err != nil || len(mac) != 6 {
+		if err == nil {
+			err = fmt.Errorf("want 6 bytes, got %d", len(mac))
+		}
+		return [6]byte{}, fmt.Errorf("reply_gateway_mac: %w", err)
+	}
+	return [6]byte(mac), nil
+}
+
 func NewControlPlaneWithContextOptions(
 	ctx context.Context,
 	log *logrus.Logger,
@@ -492,11 +506,16 @@ func NewControlPlaneWithContextOptions(
 	} else {
 		bpf = new(bpfObjects)
 		datapathGeneration := nextDatapathGeneration()
+		gatewayMAC, err := parseReplyGatewayMAC(global.ReplyGatewayMAC)
+		if err != nil {
+			return nil, err
+		}
 		if err = fullLoadBpfObjects(log, bpf, &loadBpfOptions{
 			PinPath:                pinPath,
 			CollectionOptions:      collectionOpts,
 			ConnStateMapMaxEntries: connStateMapMaxEntries,
 			DatapathGeneration:     datapathGeneration,
+			LandscapeGatewayMAC:    gatewayMAC,
 		}, global.SoMarkFromDae); err != nil {
 			if log.Level == logrus.PanicLevel {
 				log.Panicln(err)
@@ -530,6 +549,7 @@ func NewControlPlaneWithContextOptions(
 		buildOpts.IsReload,
 		!sharedBpfReload,
 	)
+	core.setForceClassicTC(global.TcClassic)
 	// A prepared shared-BPF routing-epoch generation must not overwrite the
 	// active generation's health map while it is still only a candidate. The
 	// runtime supervisor resumes its writes after publish, or leaves it paused

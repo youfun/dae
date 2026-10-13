@@ -28,17 +28,19 @@ var errBpfObjectsUnavailable = errors.New("eBPF objects are unavailable in this 
 // CVE-2025-37959 fix (mainline >= 6.14.7 or official stable backports).
 // When enabled, provides ~50% throughput improvement by bypassing CPU backlog.
 type bpfDaeParam struct {
-	_                    structs.HostLayout
-	TproxyPort           uint32
-	ControlPlanePid      uint32
-	Dae0Ifindex          uint32
-	DaeNetnsId           uint32
-	Dae0peerMac          [6]uint8
-	PaddingAfterMac      [2]uint8
-	UseRedirectPeer      uint8 // 0=use bpf_redirect(), 1=use bpf_redirect_peer() when safe
-	HasBpfGetCurrentTask uint8
-	DatapathGeneration   uint16
-	DaeSocketMark        uint32 // mark set on dae's own sockets to identify them in eBPF
+	_                      structs.HostLayout
+	TproxyPort             uint32
+	ControlPlanePid        uint32
+	Dae0Ifindex            uint32
+	DaeNetnsId             uint32
+	Dae0peerMac            [6]uint8
+	PaddingAfterMac        [2]uint8
+	UseRedirectPeer        uint8 // 0=use bpf_redirect(), 1=use bpf_redirect_peer() when safe
+	HasBpfGetCurrentTask   uint8
+	DatapathGeneration     uint16
+	DaeSocketMark          uint32 // mark set on dae's own sockets to identify them in eBPF
+	LandscapeGatewayMac    [6]uint8
+	PaddingAfterGatewayMac [2]uint8
 }
 
 type bpfDomainRouting struct {
@@ -404,6 +406,7 @@ type loadBpfOptions struct {
 	ConnStateMapMaxEntries     uint32
 	RedirectTrackMapMaxEntries uint32
 	DatapathGeneration         uint16
+	LandscapeGatewayMAC        [6]byte
 }
 
 const (

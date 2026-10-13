@@ -54,6 +54,9 @@ type tcHookSpec struct {
 	Name      string
 	Program   *ebpf.Program
 	Run       func(func() error) error
+	// ForceClassic selects classic TC on the first attach even when the
+	// interface has no classic filter yet. It does not change priority.
+	ForceClassic bool
 }
 
 func (s tcHookSpec) key() tcHookKey {
@@ -586,6 +589,9 @@ func (s *tcHookSet) attachLocked(group *tcHookGroup, spec tcHookSpec) error {
 		classicPresent, err := s.backend.classicFiltersPresent(spec)
 		if err != nil {
 			return fmt.Errorf("inspect existing classic TC filters: %w", err)
+		}
+		if spec.ForceClassic {
+			classicPresent = true
 		}
 		if classicPresent {
 			group.mode = tcHookModeClassic

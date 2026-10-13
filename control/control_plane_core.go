@@ -160,6 +160,10 @@ type controlPlaneCore struct {
 	registeredWanPatterns map[string]struct{}
 	tcHookLanPatterns     []string
 	tcHookWanPatterns     []string
+	// forceClassicTC is set before the core is published. When true, the first
+	// attach on an interface uses classic TC even if no foreign filter exists
+	// yet. The default remains the existing auto selection.
+	forceClassicTC bool
 	// bindStateMu guards bindStates (per-link bind outcomes, lazily created).
 	// bindAttempts/bindFailures are the magnitude counters for datapath binds;
 	// see logBindOutcome in control_plane_core_bind_event.go.

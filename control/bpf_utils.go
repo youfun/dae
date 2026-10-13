@@ -315,6 +315,9 @@ type loadBpfOptions struct {
 	ConnStateMapMaxEntries     uint32
 	RedirectTrackMapMaxEntries uint32
 	DatapathGeneration         uint16
+	// LandscapeGatewayMAC is opt-in. Zero keeps dae's historical reply
+	// destination, which is the original frame source.
+	LandscapeGatewayMAC [6]byte
 }
 
 const (
@@ -656,27 +659,31 @@ retryLoadBpf:
 
 	constants := map[string]any{
 		"PARAM": struct {
-			tproxyPort           uint32
-			controlPlanePid      uint32
-			dae0Ifindex          uint32
-			daeNetnsId           uint32
-			dae0peerMac          [6]byte
-			paddingAfterMac      [2]uint8
-			useRedirectPeer      uint8
-			hasBpfGetCurrentTask uint8
-			datapathGeneration   uint16
-			daeSocketMark        uint32
+			tproxyPort             uint32
+			controlPlanePid        uint32
+			dae0Ifindex            uint32
+			daeNetnsId             uint32
+			dae0peerMac            [6]byte
+			paddingAfterMac        [2]uint8
+			useRedirectPeer        uint8
+			hasBpfGetCurrentTask   uint8
+			datapathGeneration     uint16
+			daeSocketMark          uint32
+			landscapeGatewayMac    [6]byte
+			paddingAfterGatewayMac [2]uint8
 		}{
-			tproxyPort:           opts.BigEndianTproxyPort,
-			controlPlanePid:      uint32(os.Getpid()),
-			dae0Ifindex:          uint32(GetDaeNetns().Dae0().Attrs().Index),
-			daeNetnsId:           uint32(netnsID),
-			dae0peerMac:          peerMac,
-			paddingAfterMac:      [2]uint8{0, 0},
-			useRedirectPeer:      useRedirectPeer,
-			hasBpfGetCurrentTask: hasBpfGetCurrentTask,
-			datapathGeneration:   opts.DatapathGeneration,
-			daeSocketMark:        soMarkFromDae,
+			tproxyPort:             opts.BigEndianTproxyPort,
+			controlPlanePid:        uint32(os.Getpid()),
+			dae0Ifindex:            uint32(GetDaeNetns().Dae0().Attrs().Index),
+			daeNetnsId:             uint32(netnsID),
+			dae0peerMac:            peerMac,
+			paddingAfterMac:        [2]uint8{0, 0},
+			useRedirectPeer:        useRedirectPeer,
+			hasBpfGetCurrentTask:   hasBpfGetCurrentTask,
+			datapathGeneration:     opts.DatapathGeneration,
+			daeSocketMark:          soMarkFromDae,
+			landscapeGatewayMac:    opts.LandscapeGatewayMAC,
+			paddingAfterGatewayMac: [2]uint8{0, 0},
 		},
 		"EVENT_RATE": eventRateValue(),
 	}

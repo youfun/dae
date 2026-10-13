@@ -178,6 +178,15 @@ func (c *controlPlaneCore) beginTCHookReplace() error {
 	return nil
 }
 
+func (c *controlPlaneCore) setForceClassicTC(force bool) {
+	if c == nil {
+		return
+	}
+	c.tcHookMu.Lock()
+	c.forceClassicTC = force
+	c.tcHookMu.Unlock()
+}
+
 func (c *controlPlaneCore) stageTCHook(spec tcHookSpec) error {
 	if c == nil {
 		return nil

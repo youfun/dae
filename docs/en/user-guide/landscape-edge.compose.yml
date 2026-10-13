@@ -1,0 +1,44 @@
+# Isolated Landscape Flow 2 PoC. Do not attach this container to the router
+# host network, and do not reuse the existing Mihomo flow.
+#
+# Create a new, unused Landscape flow in the UI or API and bind only a test
+# client or a test domain to it. Point that flow's Docker target at the
+# container name dae-edge. Stopping this compose project must affect only
+# that new flow.
+
+services:
+  dae-edge:
+    build:
+      context: ../../..
+      dockerfile: docs/en/user-guide/landscape-edge.Dockerfile
+    container_name: dae-edge
+    # Isolated bridge only. Do not set a host network or host pid namespace.
+    networks:
+      - landscape_edge
+    cap_add:
+      - NET_ADMIN
+      - BPF
+      - SYS_ADMIN
+    devices:
+      - /dev/net/tun
+    volumes:
+      - ./landscape-edge.dae:/etc/dae/config.dae:ro
+      - landscape_register:/ld_unix_link:ro
+    environment:
+      LANDSCAPE_EDGE_IFACE: eth0
+      # Docker bridge only. Learns the container gateway and publishes it for
+      # dae's opt-in reply_gateway_mac. Leave unset on a veth that is not bridged.
+      LANDSCAPE_EDGE_GATEWAY_MAC: auto
+      DAE_CONFIG: /etc/dae/config.dae
+    restart: unless-stopped
+
+networks:
+  landscape_edge:
+    driver: bridge
+    internal: false
+
+volumes:
+  landscape_register:
+    # Replace this with the host directory Landscape actually exports, for
+    # example /root/.landscape-router/unix_link. Keep it read-only.
+    driver: local

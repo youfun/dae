@@ -61,6 +61,8 @@ var GlobalDesc = Desc{
 	"mptcp":                        "Enable Multipath TCP.  If is true, dae will try to use MPTCP to connect all nodes, but it will only take effects when the node supports MPTCP. It can use for load balance and failover to multiple interfaces and IPs.",
 	"bootstrap_resolver":           "Explicit DNS resolver used only for bootstrap lookups that must happen before dae DNS routing is available, such as resolving named DNS upstream hosts and dial_mode real-domain probes. When unset, dae falls back to 119.29.29.29:53 and 223.5.5.5:53 in order. Setting bootstrap_resolver disables those defaults and uses only the configured resolver.",
 	"bpf_conn_state_map_size":      "Maximum entries for the shared TCP/UDP eBPF connection-state map. Lower values reduce locked kernel memory but also lower the maximum tracked concurrent flows. This takes effect on fresh eBPF load or restart; same-port reload keeps the live map to preserve connections.",
+	"tc_classic":                   "Force classic TC filters instead of TCX. Off by default. Enable it when another classic TC filter on the same interface must run before or after dae by priority. It does not change dae's own priorities.",
+	"reply_gateway_mac":            "Optional MAC written onto a dae0 reply whose destination is not already this address, immediately before redirect. Empty keeps the original frame source. It does not change node selection.",
 }
 
 var DnsDesc = Desc{

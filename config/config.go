@@ -60,6 +60,17 @@ type Global struct {
 	BandwidthMaxRx      string        `mapstructure:"bandwidth_max_rx" default:"0"`
 	UDPHopInterval      time.Duration `mapstructure:"udphop_interval" default:"30s"`
 	BpfConnStateMapSize uint32        `mapstructure:"bpf_conn_state_map_size" default:"262144"`
+	// TcClassic forces classic TC filters instead of TCX. Default false keeps
+	// the existing auto selection: TCX unless a classic filter is already
+	// present or the kernel rejects TCX. Set it when a later or earlier
+	// classic filter must share priority ordering with dae, as on a container
+	// ingress that already has a pref-1 adapter.
+	TcClassic bool `mapstructure:"tc_classic" default:"false"`
+	// ReplyGatewayMAC rewrites a dae0 reply destination that is not already
+	// this MAC, immediately before bpf_redirect. Empty keeps the historical
+	// destination, the original frame source. It is a container-gateway
+	// address, not a host WAN or bridge address, and it does not select a flow.
+	ReplyGatewayMAC string `mapstructure:"reply_gateway_mac" default:""`
 }
 
 type FunctionOrString any

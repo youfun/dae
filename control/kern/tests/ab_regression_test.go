@@ -42,16 +42,18 @@ func loadABRegressionObjectsWithMark(t *testing.T, soMark uint32) *bpftestObject
 		t.Fatalf("disable pinned maps: %v", err)
 	}
 	param := struct {
-		tproxyPort           uint32
-		controlPlanePid      uint32
-		dae0Ifindex          uint32
-		daeNetnsId           uint32
-		dae0peerMac          [6]byte
-		paddingAfterMac      [2]uint8
-		useRedirectPeer      uint8
-		hasBpfGetCurrentTask uint8
-		datapathGeneration   uint16
-		daeSocketMark        uint32
+		tproxyPort             uint32
+		controlPlanePid        uint32
+		dae0Ifindex            uint32
+		daeNetnsId             uint32
+		dae0peerMac            [6]byte
+		paddingAfterMac        [2]uint8
+		useRedirectPeer        uint8
+		hasBpfGetCurrentTask   uint8
+		datapathGeneration     uint16
+		daeSocketMark          uint32
+		landscapeGatewayMac    [6]byte
+		paddingAfterGatewayMac [2]uint8
 	}{
 		datapathGeneration: 41,
 		daeSocketMark:      soMark,

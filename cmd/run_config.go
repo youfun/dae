@@ -20,9 +20,36 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/daeuniverse/dae/common"
+	"github.com/daeuniverse/dae/component/landscape"
 	"github.com/daeuniverse/dae/config"
 	"github.com/daeuniverse/dae/pkg/config_parser"
 )
+
+// applyReplyGatewayMACFile fills an empty reply_gateway_mac from the file the
+// landscape adapter writes after learning the container default-route neighbor.
+// An explicit config value wins. A missing file leaves the historical reply
+// destination unchanged.
+func applyReplyGatewayMACFile(conf *config.Config) error {
+	if conf == nil || conf.Global.ReplyGatewayMAC != "" {
+		return nil
+	}
+	raw, err := os.ReadFile(landscape.ReplyGatewayMACPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("read reply gateway MAC: %w", err)
+	}
+	text := strings.TrimSpace(string(raw))
+	if text == "" {
+		return nil
+	}
+	if _, err := net.ParseMAC(text); err != nil {
+		return fmt.Errorf("reply gateway MAC file: %w", err)
+	}
+	conf.Global.ReplyGatewayMAC = text
+	return nil
+}
 
 func monotonicNowNano() uint64 {
 	var ts unix.Timespec
@@ -150,6 +177,9 @@ func readConfig(cfgFile string) (conf *config.Config, includes []string, err err
 		return nil, nil, err
 	}
 	if conf, err = config.New(sections); err != nil {
+		return nil, nil, err
+	}
+	if err = applyReplyGatewayMACFile(conf); err != nil {
 		return nil, nil, err
 	}
 	return conf, includes, nil

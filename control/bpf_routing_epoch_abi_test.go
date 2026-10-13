@@ -56,6 +56,12 @@ func TestRoutingEpochBPFABI(t *testing.T) {
 	if got, want := unsafe.Offsetof(bpfDaeParam{}.DatapathGeneration), uintptr(26); got != want {
 		t.Fatalf("bpfDaeParam.DatapathGeneration offset = %d, want %d", got, want)
 	}
+	if got, want := unsafe.Offsetof(bpfDaeParam{}.LandscapeGatewayMac), uintptr(32); got != want {
+		t.Fatalf("bpfDaeParam.LandscapeGatewayMac offset = %d, want %d", got, want)
+	}
+	if got, want := unsafe.Sizeof(bpfDaeParam{}), uintptr(40); got != want {
+		t.Fatalf("sizeof(bpfDaeParam) = %d, want %d", got, want)
+	}
 
 	if got, want := unsafe.Sizeof(bpfRoutingEpochIp{}), uintptr(20); got != want {
 		t.Fatalf("sizeof(bpfRoutingEpochIp) = %d, want %d", got, want)
